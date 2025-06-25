@@ -13,12 +13,12 @@
 | Command      | What it does                                                                       |
 | ------------ | ---------------------------------------------------------------------------------- |
 | **clone**    | Recursively downloads a live site to a local folder and rewrites internal links.   |
-| **run**      | Fires up a lightweight Flask web‑server that serves a cloned repo.                 |
+| **run**      | Fires up a lightweight Flask web server that serves a cloned repo.                 |
 | **update**   | Refreshes an existing repo *safely* by cloning into a temp dir and syncing changes |
 | **savewcof** | Bundles an entire repo into a single `.wcof` archive (ZIP under the hood).         |
 | **runwcof**  | Serves a `.wcof` file directly – no manual extraction required.                    |
 
-Additional niceties:
+Additional features:
 
 * **Progress bars** via *tqdm* so you’re never in the dark.
 * **Domain‑locked crawling** – stays on the origin host.
@@ -30,7 +30,7 @@ Additional niceties:
 ## Requirements
 
 * Python ≥ 3.8
-* The following PyPI packages (automatically pulled in by `pip install`):
+* The following packages (installed automatically via pip):
 
   * `requests`
   * `beautifulsoup4`
@@ -41,47 +41,35 @@ Additional niceties:
 
 ## Installation
 
-### 🔌 One‑liner (recommended)
+### 🔌 Install via pip (recommended)
 
 ```bash
 python -m pip install webcloner
 ```
 
-*(Replace `python` with `python3` on some systems.)*
-
-### 🛠️ From source (for bleeding‑edge or hacking)
-
-```bash
-git clone https://github.com/yourname/webcloner.git
-cd webcloner
-python -m pip install -r requirements.txt
-# Make the script globally available
-python setup.py install  # or `pip install -e .` for editable mode
-```
-
-The installer drops a console entry‑point named **`webcloner`** into your PATH.
+*(Use `python3` instead of `python` if needed.)*
 
 ---
 
-## Quick Start
+## Quick Start
 
 ```bash
-# 1. Mirror the site into ./offline_copy (max 2 levels deep)
+# 1. Clone a website (max 2 levels deep)
 webcloner clone https://example.com ./offline_copy --depth 2
 
-# 2. Take a look in your browser
-webcloner run ./offline_copy 8000  # -> http://localhost:8000
+# 2. Serve the local copy in your browser
+webcloner run ./offline_copy 8000
 
-# 3. Package the repo into a single file you can email or stick on a USB drive
+# 3. Package the local copy into a single .wcof file
 webcloner savewcof mysite.wcof ./offline_copy
 
-# 4. Hand the .wcof to a friend – they can serve it instantly:
+# 4. Serve directly from a .wcof archive
 webcloner runwcof mysite.wcof 8080
 ```
 
 ---
 
-## Detailed Command Guide
+## Command Reference
 
 ### `clone`
 
@@ -89,16 +77,13 @@ webcloner runwcof mysite.wcof 8080
 webcloner clone <url> <output_dir> [--depth N]
 ```
 
-* **`url`** – starting page (must include protocol).
-* **`output_dir`** – destination folder (will be created if missing).
-* **`--depth`** – recursion limit (default 2). Set to 0 for only the start page.
+* `url` – starting URL (with http\:// or https\://).
+* `output_dir` – local folder for files.
+* `--depth` – recursion depth (default 2).
 
-Behind the scenes the crawler:
+Downloads and rewrites same-domain links for offline use.
 
-1. Downloads the page.
-2. Parses the HTML with BeautifulSoup.
-3. Rewrites internal links (`href`, `src`) to point at local paths.
-4. Enqueues discovered same‑domain assets & pages until the depth limit.
+---
 
 ### `run`
 
@@ -106,7 +91,9 @@ Behind the scenes the crawler:
 webcloner run <repo_dir> <port> [--host 0.0.0.0]
 ```
 
-Serves *static* files out of `repo_dir` using Flask. Perfect for quick checks or sharing over LAN.
+Serves the cloned site via Flask.
+
+---
 
 ### `update`
 
@@ -114,11 +101,9 @@ Serves *static* files out of `repo_dir` using Flask. Perfect for quick checks or
 webcloner update <url> <repo_dir> [--depth N]
 ```
 
-Safely refreshes an existing repo:
+Safely refreshes the repo by syncing changes from the live site.
 
-* Clones the live site into a **temporary** directory.
-* Compares modification times and copies newer/added files back.
-* Leaves untouched anything that the live site no longer has (in case you keep local notes).
+---
 
 ### `savewcof`
 
@@ -126,7 +111,9 @@ Safely refreshes an existing repo:
 webcloner savewcof <filename.wcof> <dest_dir> <repo_dir>
 ```
 
-Creates a zip‑compressed *Web Cloner Offline File*. Think of it as a self‑contained website in a single file.
+Bundles the repo into a `.wcof` ZIP archive.
+
+---
 
 ### `runwcof`
 
@@ -134,67 +121,20 @@ Creates a zip‑compressed *Web Cloner Offline File*. Think of it as a self‑co
 webcloner runwcof <file.wcof> <port> [--host 0.0.0.0]
 ```
 
-Extracts the archive to a temp folder **in memory** and launches the server – super handy for throw‑and‑go demos.
+Extracts and serves from a `.wcof` archive on the fly.
 
 ---
 
-## Typical Workflows
+## FAQ
 
-### Archiving a Documentation Site
-
-```bash
-webcloner clone https://docs.oldsoftware.com ./docs --depth 3
-webcloner savewcof docs_2025-06-25.wcof ./dist ./docs
-```
-
-Transfer the `.wcof` to any air‑gapped machine and serve:
-
-```bash
-webcloner runwcof docs_2025-06-25.wcof 7000
-```
-
-### Keeping a Local Mirror Fresh
-
-```bash
-# Nightly cron job (Linux/macOS)
-0 3 * * * webcloner update https://myblog.com /srv/mirrors/myblog --depth 2 >> /var/log/webcloner.log 2>&1
-```
-
----
-
-## How It Works
-
-1. **URL Normalisation** – Strips query/fragment, treats a bare path as `/index.html`.
-2. **Same‑Domain Filter** – No cross‑site requests (stops runaway downloads).
-3. **Breadth‑first Crawl** – Queue of `(url, depth)`; avoids recursion stack blow‑ups.
-4. **HTML Re‑write** – Converts each internal link to a *relative filesystem* path so that the site works off‑disk.
-5. **Asset Handling** – Non‑HTML responses are stored verbatim (images, CSS, JS, etc.).
-6. **Packaging** – A `.wcof` is just a ZIP with your folder structure – the magic is knowing to look for `index.html` when serving.
-
----
-
-## FAQ & Troubleshooting
-
-| Question                             | Answer                                                                                                                                                  |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| *It’s downloading external CDNs!*    | Only same‑host links are followed, **but** CSS/JS may reference offsite assets. Consider using a CSS post‑processor or mirror those domains separately. |
-| *Pages show garbled characters*      | Force UTF‑8 decoding with `--encoding utf-8` (coming soon) or file an issue.                                                                            |
-| *Can I clone sites that need login?* | Currently no – but you can proxy the session by editing `cloner.py` to inject cookies into `requests.Session()`.                                        |
-| *Is JavaScript executed?*            | No. This is a static grabber. SPA sites that build HTML client‑side will download, but you’ll only get the bare JS/JSON, not the rendered pages.        |
-
----
-
-## Contributing
-
-Pull requests are welcome! If you spot a bug or have a feature idea:
-
-1. **Open an issue** with steps to reproduce.
-2. Fork & create a topic branch.
-3. Run `black cloner.py && flake8` before pushing.
-4. Submit a PR – CI will run unit tests automatically.
+| Question                              | Answer                                                               |
+| ------------------------------------- | -------------------------------------------------------------------- |
+| *Why does it download external CDNs?* | Only same-domain links are crawled. Some CSS/JS may load CDN assets. |
+| *Can I clone login-required sites?*   | Not yet. You’d need to add cookies manually in the script.           |
+| *Is JavaScript executed?*             | No. This is a static grabber, no JS rendering.                       |
 
 ---
 
 ## License
 
-This project is licensed under the **Apache License 2.0** – see [LICENSE](LICENSE) for full terms.
+Licensed under the **Apache License 2.0** – see [LICENSE](LICENSE) for full terms.
