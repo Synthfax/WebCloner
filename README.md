@@ -8,21 +8,6 @@
 
 ---
 
-## Table of Contents
-
-1. [Features](#features)
-2. [Requirements](#requirements)
-3. [Installation](#installation)
-4. [Quick Start](#quick-start)
-5. [Detailed Command Guide](#detailed-command-guide)
-6. [Typical Workflows](#typical-workflows)
-7. [How It Works](#how-it-works)
-8. [FAQ & Troubleshooting](#faq--troubleshooting)
-9. [Contributing](#contributing)
-10. [License](#license)
-
----
-
 ## Features
 
 | Command      | What it does                                                                       |
