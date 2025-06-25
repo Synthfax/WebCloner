@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setup(
     name="webcloner",
-    version="1.0.0",
+    version="1.0.2",
     author="Synthfax",
     author_email="synthfax@gmail.com",  # change to your real or dummy email
     description="Offline website cloner, updater, and packager",
